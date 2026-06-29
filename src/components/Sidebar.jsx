@@ -38,11 +38,11 @@ const Sidebar = ({ collapsed }) => {
       setPendingLostItems(lostItems.filter(l => l.status === 'pending' || l.status === 'lost').length);
       setPendingIssues(issues.filter(i => i.status === 'pending').length);
       setUnreadNotifs(notifs.filter(n => !n.is_read && n.type === 'admin' && n.sender_type !== 'admin').length);
-    } catch {}
+    } finally { /* empty */ }
   };
 
   useEffect(() => {
-    fetchBadges();
+     fetchBadges();
     const interval = setInterval(fetchBadges, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -52,6 +52,7 @@ const Sidebar = ({ collapsed }) => {
   const menuItems = [
     { key: '/', icon: <DashboardOutlined />, label: 'الرئيسية' },
     { key: '/buses', icon: <CarOutlined />, label: 'الباصات' },
+    { key: '/bus-map', icon: <EnvironmentOutlined />, label: 'خريطة الباصات' },
     { key: '/drivers', icon: <UserOutlined />, label: 'السائقون' },
     { key: '/shifts', icon: <ScheduleOutlined />, label: 'الورديات' },
     { key: '/routes', icon: <ApartmentOutlined />, label: 'الخطوط' },

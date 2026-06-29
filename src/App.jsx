@@ -16,6 +16,7 @@ import LostItems from './pages/lost-items/LostItems';
 import Shifts from './pages/shifts/Shifts';
 import Users from './pages/users/Users';
 import POS from './pages/pos/POS';
+import BusTrackerMap from './pages/bus-map/BusTrackerMap';
 
 function App() {
   const { user } = useAuth();
@@ -36,6 +37,7 @@ function App() {
       <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/login" replace />} />
       <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/buses" element={<PrivateRoute><Buses /></PrivateRoute>} />
+      <Route path="/bus-map" element={<PrivateRoute><BusTrackerMap /></PrivateRoute>} />
       <Route path="/drivers" element={<PrivateRoute><Drivers /></PrivateRoute>} />
       <Route path="/shifts" element={<PrivateRoute><Shifts /></PrivateRoute>} />
       <Route path="/routes" element={<PrivateRoute><RoutesPage /></PrivateRoute>} />
