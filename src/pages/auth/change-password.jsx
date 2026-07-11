@@ -23,14 +23,12 @@ const ChangePassword = () => {
       });
       message.success('تم تغيير كلمة المرور بنجاح ✅');
 
-      // حدّث بيانات المستخدم — شيل must_change_password
       const updatedUser = { ...user, must_change_password: false };
       login(updatedUser, localStorage.getItem('token'));
 
-      // حوّل للصفحة الرئيسية بعد ثانية
       setTimeout(() => { window.location.href = '/'; }, 1000);
     } catch (err) {
-      message.error(err.response?.data?.message || 'كلمة المرور القديمة غلط');
+      message.error(err.response?.data?.message || 'كلمة المرور القديمة خاطئة');
     }
     setLoading(false);
   };
@@ -51,7 +49,7 @@ const ChangePassword = () => {
             <SafetyOutlined style={{ fontSize: 32, color: '#fa8c16' }} />
           </div>
           <h2 style={{ margin: 0 }}>غيّر كلمة المرور</h2>
-          <p style={{ color: '#888', margin: '8px 0 0' }}>لازم تغيّر كلمة المرور المؤقتة قبل المتابعة</p>
+          <p style={{ color: '#888', margin: '8px 0 0' }}>يجب أن تغيّر كلمة المرور المؤقتة قبل المتابعة</p>
         </div>
 
         <Alert

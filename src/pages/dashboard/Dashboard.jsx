@@ -120,7 +120,6 @@ const Dashboard = () => {
 
         <Content style={{ margin: 20 }}>
 
-          {/* الإحصائيات العامة */}
           <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
             <Col xs={12} lg={6}>{statCard('إجمالي الباصات', stats.buses, <CarOutlined />, '#1890ff', '#e6f7ff')}</Col>
             <Col xs={12} lg={6}>{statCard('السائقون', stats.drivers, <UserOutlined />, '#52c41a', '#f6ffed')}</Col>
@@ -131,7 +130,7 @@ const Dashboard = () => {
           <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
             <Col xs={12} lg={6}>{statCard('الخطوط', stats.routes, <ApartmentOutlined />, '#fa8c16', '#fff7e6')}</Col>
             <Col xs={12} lg={6}>{statCard('المواقف', stats.stations, <EnvironmentOutlined />, '#eb2f96', '#fff0f6')}</Col>
-            <Col xs={12} lg={6}>{statCard('إجمالي الركوبات', stats.totalTripsAll, <RiseOutlined />, '#2f54eb', '#f0f5ff')}</Col>
+            <Col xs={12} lg={6}>{statCard('إجمالي الركوب', stats.totalTripsAll, <RiseOutlined />, '#2f54eb', '#f0f5ff')}</Col>
             <Col xs={12} lg={6}>
               <Card size="small" style={{
                 borderRadius: 10, height: '100%',
@@ -145,7 +144,6 @@ const Dashboard = () => {
             </Col>
           </Row>
 
-          {/* حالة الباصات */}
           <Row gutter={[12, 12]} style={{ marginBottom: 12 }}>
             <Col xs={24}>
               <Card size="small" title="حالة الباصات"
@@ -160,7 +158,6 @@ const Dashboard = () => {
             </Col>
           </Row>
 
-          {/* تقارير وأعطال اليوم */}
           <Row gutter={[12, 12]}>
             <Col xs={24} lg={12}>
               <Card size="small"

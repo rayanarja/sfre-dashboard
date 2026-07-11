@@ -1,123 +1,361 @@
-import { useState, useEffect } from 'react';
-import { Layout, Table, Button, Modal, Form, Input, Select, Tag, message, Popconfirm, Alert } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined, DisconnectOutlined } from '@ant-design/icons';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Layout,
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Tag,
+  message,
+  Popconfirm,
+  Tabs,
+  Empty,
+  Space,
+} from 'antd';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  CopyOutlined,
+  SaveOutlined,
+  MenuOutlined,
+} from '@ant-design/icons';
 import Sidebar from '../../components/Sidebar';
 import api from '../../api/axios';
 
 const { Header, Content } = Layout;
 const { Option } = Select;
 
+const DIRECTIONS = {
+  outbound: 'ذهاب',
+  inbound: 'إياب',
+};
+
+const stationIdOf = (station) => station.station_id ?? station.id;
+const stationOrderOf = (station, index) => station.station_order ?? station.order_index ?? index + 1;
+
+const getStationName = (stationId, allStations) => {
+  const station = allStations.find((item) => stationIdOf(item) === stationId);
+  return station?.name || `#${stationId}`;
+};
+
+const normalizeDirectionStations = (route, direction) => {
+  const direct = route?.[direction];
+  if (Array.isArray(direct)) return direct;
+
+  const routeStations = route?.route_stations;
+  if (Array.isArray(routeStations)) {
+    return routeStations.filter((station) => station.direction === direction);
+  }
+
+  const stations = route?.stations;
+  if (!Array.isArray(stations)) return [];
+
+  const filtered = stations.filter((station) => station.direction === direction);
+  if (filtered.length) return filtered;
+
+  return direction === 'outbound' ? stations : [];
+};
+
+const toStationPayload = (stations) => (
+  stations.map((station, index) => ({
+    station_id: station.station_id,
+    station_order: index + 1,
+  }))
+);
+
 const RoutesPage = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [routes, setRoutes]       = useState([]);
-  const [loading, setLoading]     = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [linkModalOpen, setLinkModalOpen] = useState(false);
-  const [editing, setEditing]     = useState(null);
+  const [collapsed] = useState(false);
+  const [routes, setRoutes] = useState([]);
+  const [stations, setStations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [routeModalOpen, setRouteModalOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [savingStations, setSavingStations] = useState(false);
+  const [activeDirection, setActiveDirection] = useState('outbound');
+  const [selectedStationId, setSelectedStationId] = useState(null);
+  const [dragState, setDragState] = useState(null);
+  const [directionStations, setDirectionStations] = useState({
+    outbound: [],
+    inbound: [],
+  });
   const [form] = Form.useForm();
-  const [linkForm] = Form.useForm();
+  const [detailsForm] = Form.useForm();
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/routes');
-      setRoutes(res.data);
-    } catch { message.error('خطأ في جلب البيانات'); }
-    setLoading(false);
+      const [routesRes, stationsRes] = await Promise.all([
+        api.get('/routes'),
+        api.get('/stations'),
+      ]);
+      const nextRoutes = Array.isArray(routesRes.data) ? routesRes.data : [];
+      setRoutes(nextRoutes);
+      setStations(Array.isArray(stationsRes.data) ? stationsRes.data : []);
+      return nextRoutes;
+    } catch (err) {
+      message.error(err.response?.data?.message || 'خطأ في جلب البيانات');
+      return [];
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // إنشاء/تعديل خط
-  const openAdd = () => { setEditing(null); form.resetFields(); setModalOpen(true); };
-  const openEdit = (r) => { setEditing(r); form.setFieldsValue(r); setModalOpen(true); };
+  const tableRoutes = useMemo(() => routes, [routes]);
 
-  const handleSubmit = async (values) => {
+  const hydrateRouteDetails = (route) => {
+    setEditing(route);
+    detailsForm.setFieldsValue({
+      route_name: route.route_name,
+      description: route.description,
+    });
+    setDirectionStations({
+      outbound: normalizeDirectionStations(route, 'outbound')
+        .map((station, index) => ({
+          station_id: station.station_id ?? stationIdOf(station),
+          station_order: stationOrderOf(station, index),
+        }))
+        .sort((a, b) => a.station_order - b.station_order),
+      inbound: normalizeDirectionStations(route, 'inbound')
+        .map((station, index) => ({
+          station_id: station.station_id ?? stationIdOf(station),
+          station_order: stationOrderOf(station, index),
+        }))
+        .sort((a, b) => a.station_order - b.station_order),
+    });
+    setActiveDirection('outbound');
+    setSelectedStationId(null);
+    setDetailsOpen(true);
+  };
+
+  const openAdd = () => {
+    form.resetFields();
+    setRouteModalOpen(true);
+  };
+
+  const openDetails = async (route) => {
     try {
-      if (editing) {
-        await api.put(`/routes/${editing.route_id}`, values);
-        message.success('تم تعديل الخط');
-      } else {
-        await api.post('/routes', values);
-        message.success('تم إضافة الخط');
-      }
-      setModalOpen(false); fetchData();
-    } catch (err) { message.error(err.response?.data?.message || 'حدث خطأ'); }
+      const res = await api.get(`/routes/${route.route_id}`);
+      hydrateRouteDetails(res.data || route);
+    } catch {
+      hydrateRouteDetails(route);
+    }
+  };
+
+  const handleCreateRoute = async (values) => {
+    try {
+      const res = await api.post('/routes', values);
+      message.success('تم إضافة الخط');
+      setRouteModalOpen(false);
+      const nextRoutes = await fetchData();
+      const createdRoute = res.data?.route_id
+        ? res.data
+        : nextRoutes.find((route) => route.route_name === values.route_name);
+      if (createdRoute) hydrateRouteDetails(createdRoute);
+    } catch (err) {
+      message.error(err.response?.data?.message || 'حدث خطأ');
+    }
   };
 
   const handleDelete = async (id) => {
     try {
       await api.delete(`/routes/${id}`);
-      message.success('تم حذف الخط'); fetchData();
-    } catch (err) { message.error(err.response?.data?.message || 'حدث خطأ'); }
-  };
-
-  // ربط خطين
-  const handleLink = async (values) => {
-    try {
-      await api.post('/routes/link', values);
-      message.success('تم ربط الخطين بنجاح ✅');
-      setLinkModalOpen(false);
-      linkForm.resetFields();
+      message.success('تم حذف الخط');
       fetchData();
-    } catch (err) { message.error(err.response?.data?.message || 'حدث خطأ'); }
+    } catch (err) {
+      message.error(err.response?.data?.message || 'حدث خطأ');
+    }
   };
 
-  // فك ربط
-  const handleUnlink = async (id) => {
+  const addStationToDirection = () => {
+    if (!selectedStationId) return;
+    setDirectionStations((current) => {
+      const list = current[activeDirection];
+      if (list.some((station) => station.station_id === selectedStationId)) {
+        message.warning('الموقف موجود مسبقاً ضمن هذا الاتجاه');
+        return current;
+      }
+
+      return {
+        ...current,
+        [activeDirection]: [
+          ...list,
+          {
+            station_id: selectedStationId,
+            station_order: list.length + 1,
+          },
+        ],
+      };
+    });
+    setSelectedStationId(null);
+  };
+
+  const removeStationFromDirection = (direction, index) => {
+    setDirectionStations((current) => ({
+      ...current,
+      [direction]: current[direction]
+        .filter((_, itemIndex) => itemIndex !== index)
+        .map((station, itemIndex) => ({ ...station, station_order: itemIndex + 1 })),
+    }));
+  };
+
+  const copyOutboundReverse = () => {
+    setDirectionStations((current) => ({
+      ...current,
+      inbound: [...current.outbound]
+        .reverse()
+        .map((station, index) => ({ ...station, station_order: index + 1 })),
+    }));
+    setActiveDirection('inbound');
+    message.success('تم نسخ الذهاب بالعكس إلى الإياب');
+  };
+
+  const moveStation = (direction, fromIndex, toIndex) => {
+    setDirectionStations((current) => {
+      const next = [...current[direction]];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return {
+        ...current,
+        [direction]: next.map((station, index) => ({ ...station, station_order: index + 1 })),
+      };
+    });
+  };
+
+  const saveDetails = async () => {
+    if (!editing?.route_id) return;
+    setSavingStations(true);
     try {
-      await api.delete(`/routes/${id}/unlink`);
-      message.success('تم فك الربط');
+      const values = await detailsForm.validateFields();
+      await api.put(`/routes/${editing.route_id}`, values);
+      await api.put(`/routes/${editing.route_id}/stations`, {
+        outbound: toStationPayload(directionStations.outbound),
+        inbound: toStationPayload(directionStations.inbound),
+      });
+      message.success('تم حفظ الخط واتجاهاته');
+      setDetailsOpen(false);
       fetchData();
-    } catch (err) { message.error(err.response?.data?.message || 'حدث خطأ'); }
+    } catch (err) {
+      if (err.errorFields) return;
+      message.error(err.response?.data?.message || 'تعذر حفظ مواقف الخط');
+    } finally {
+      setSavingStations(false);
+    }
   };
 
-  // جيب اسم الخط المعاكس
-  const getPairName = (pairId) => {
-    if (!pairId) return null;
-    const pair = routes.find(r => r.route_id === pairId);
-    return pair?.route_name || `#${pairId}`;
-  };
+  const renderDirectionEditor = (direction) => (
+    <div>
+      <Space.Compact style={{ width: '100%', marginBottom: 12 }}>
+        <Select
+          value={selectedStationId}
+          onChange={setSelectedStationId}
+          placeholder="اختر موقف"
+          showSearch
+          optionFilterProp="children"
+          style={{ width: '100%' }}
+        >
+          {stations.map((station) => (
+            <Option key={stationIdOf(station)} value={stationIdOf(station)}>
+              {station.name}
+            </Option>
+          ))}
+        </Select>
+        <Button type="primary" icon={<PlusOutlined />} onClick={addStationToDirection}>
+          إضافة موقف
+        </Button>
+      </Space.Compact>
 
-  // الخطوط غير المرتبطة (للربط)
-  const unlinkedRoutes = routes.filter(r => !r.pair_route_id);
+      {directionStations[direction].length ? (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {directionStations[direction].map((station, index) => (
+            <div
+              key={`${direction}-${station.station_id}-${index}`}
+              draggable
+              onDragStart={() => setDragState({ direction, index })}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={() => {
+                if (dragState?.direction === direction) moveStation(direction, dragState.index, index);
+                setDragState(null);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: '10px 12px',
+                border: '1px solid #f0f0f0',
+                borderRadius: 8,
+                background: '#fff',
+                cursor: 'grab',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <MenuOutlined style={{ color: '#8c8c8c' }} />
+                <Tag color={direction === 'outbound' ? 'blue' : 'orange'}>{index + 1}</Tag>
+                <strong>{getStationName(station.station_id, stations)}</strong>
+              </div>
+              <Button
+                icon={<DeleteOutlined />}
+                size="small"
+                danger
+                onClick={() => removeStationFromDirection(direction, index)}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={`لا توجد مواقف ${DIRECTIONS[direction]} بعد`} />
+      )}
+    </div>
+  );
 
   const columns = [
     {
-      title: 'اسم الخط', dataIndex: 'route_name', key: 'route_name',
-      render: (name, r) => (
-        <span>
-          {name}
-          {r.route_name?.includes('ذهاب') && <Tag color="blue" style={{ marginRight: 8 }}>ذهاب →</Tag>}
-          {r.route_name?.includes('إياب') && <Tag color="orange" style={{ marginRight: 8 }}>← إياب</Tag>}
-        </span>
-      ),
+      title: 'اسم الخط',
+      dataIndex: 'route_name',
+      key: 'route_name',
+      render: (name) => <strong>{name}</strong>,
     },
-    { title: 'الوصف', dataIndex: 'description', key: 'description', render: d => d || '—' },
     {
-      title: 'الخط المعاكس', key: 'pair',
-      render: (_, r) => r.pair_route_id ? (
-        <Tag color="green" icon={<LinkOutlined />}>
-          {getPairName(r.pair_route_id)}
-        </Tag>
-      ) : (
-        <Tag color="default">غير مرتبط</Tag>
-      ),
+      title: 'مواقف الذهاب',
+      key: 'outbound',
+      render: (_, route) => <Tag color="blue">{normalizeDirectionStations(route, 'outbound').length} موقف</Tag>,
     },
-    { title: 'المواقف', key: 'stations', render: (_, r) => <Tag>{r.stations?.length || 0} موقف</Tag> },
-    { title: 'الباصات', key: 'buses', render: (_, r) => <Tag color="blue">{r.buses?.length || 0} باص</Tag> },
     {
-      title: 'إجراءات', key: 'actions',
-      render: (_, r) => (
-        <span style={{ display: 'flex', gap: 4 }}>
-          <Button icon={<EditOutlined />} size="small" onClick={() => openEdit(r)} />
-          {r.pair_route_id ? (
-            <Popconfirm title="فك ربط هالخط عن الخط المعاكس؟" onConfirm={() => handleUnlink(r.route_id)} okText="فك" cancelText="لا">
-              <Button icon={<DisconnectOutlined />} size="small" style={{ color: '#fa8c16' }} />
-            </Popconfirm>
-          ) : null}
-          <Popconfirm title="تأكيد الحذف؟ رح ينحذف الخط مع كل مواقفو" onConfirm={() => handleDelete(r.route_id)} okText="نعم" cancelText="لا">
-            <Button icon={<DeleteOutlined />} size="small" danger />
+      title: 'مواقف الإياب',
+      key: 'inbound',
+      render: (_, route) => <Tag color="orange">{normalizeDirectionStations(route, 'inbound').length} موقف</Tag>,
+    },
+    {
+      title: 'الباصات',
+      key: 'buses',
+      render: (_, route) => <Tag color="green">{route.buses?.length || 0} باص</Tag>,
+    },
+    {
+      title: 'إجراءات',
+      key: 'actions',
+      render: (_, route) => (
+        <span style={{ display: 'flex', gap: 6 }}>
+          <Button icon={<EditOutlined />} size="small" onClick={() => openDetails(route)}>
+            تعديل
+          </Button>
+          <Popconfirm
+            title="تأكيد الحذف؟"
+            description="سيتم حذف الخط ومواقف الاتجاهات المرتبطة به."
+            onConfirm={() => handleDelete(route.route_id)}
+            okText="نعم"
+            cancelText="لا"
+          >
+            <Button icon={<DeleteOutlined />} size="small" danger>
+              حذف
+            </Button>
           </Popconfirm>
         </span>
       ),
@@ -128,78 +366,110 @@ const RoutesPage = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Sidebar collapsed={collapsed} />
       <Layout>
-        <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ margin: 0 }}>🗺️ إدارة الخطوط</h2>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button icon={<LinkOutlined />} onClick={() => { linkForm.resetFields(); setLinkModalOpen(true); }}
-              disabled={unlinkedRoutes.length < 2}>
-              ربط خطين (ذهاب ↔ إياب)
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>إضافة خط</Button>
-          </div>
+        <Header style={{
+          background: '#fff',
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+        }}>
+          <h2 style={{ margin: 0 }}>إدارة الخطوط</h2>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
+            إضافة خط
+          </Button>
         </Header>
+
         <Content style={{ margin: 24 }}>
-          <Alert
-            type="info"
-            showIcon
-            style={{ marginBottom: 16, borderRadius: 8 }}
-            message="كيف تضيف خط جديد؟"
-            description={
-              <div style={{ fontSize: 13 }}>
-                <b>1.</b> أضف خط الذهاب (مثال: "حلب الجديدة — ذهاب") ← أضف مواقفو بالترتيب من البداية للنهاية<br/>
-                <b>2.</b> أضف خط الإياب (مثال: "حلب الجديدة — إياب") ← أضف مواقفو بالترتيب المعاكس<br/>
-                <b>3.</b> اضغط "ربط خطين" واختر الذهاب والإياب ← الباص رح يتبدل بينهم تلقائياً<br/>
-                <b>4.</b> حط الباص على خط <b>الذهاب</b> — لما يوصل آخر موقف بيتحول للإياب لحالو
-              </div>
-            }
+          <Table
+            dataSource={tableRoutes}
+            columns={columns}
+            rowKey="route_id"
+            loading={loading}
+            bordered
+            size="middle"
           />
-          <Table dataSource={routes} columns={columns} rowKey="route_id" loading={loading} bordered size="middle" />
         </Content>
       </Layout>
 
-      {/* Modal إضافة/تعديل خط */}
-      <Modal title={editing ? 'تعديل خط' : 'إضافة خط جديد'} open={modalOpen} onCancel={() => setModalOpen(false)} onOk={() => form.submit()} okText="حفظ" cancelText="إلغاء">
-        <Form form={form} onFinish={handleSubmit} layout="vertical">
-          <Form.Item name="route_name" label="اسم الخط" rules={[{ required: true, message: 'أدخل اسم الخط' }]}>
-            <Input placeholder="مثال: حلب الجديدة — ذهاب" />
+      <Modal
+        title="إضافة خط جديد"
+        open={routeModalOpen}
+        onCancel={() => setRouteModalOpen(false)}
+        onOk={() => form.submit()}
+        okText="حفظ"
+        cancelText="إلغاء"
+      >
+        <Form form={form} onFinish={handleCreateRoute} layout="vertical">
+          <Form.Item
+            name="route_name"
+            label="اسم الخط"
+            rules={[{ required: true, message: 'أدخل اسم الخط' }]}
+          >
+            <Input placeholder="مثال: حلب الجديدة جنوبي" />
           </Form.Item>
           <Form.Item name="description" label="الوصف">
-            <Input.TextArea placeholder="وصف الخط..." rows={2} />
+            <Input.TextArea placeholder="اختياري" rows={2} />
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* Modal ربط خطين */}
       <Modal
-        title="🔗 ربط خطين (ذهاب ↔ إياب)"
-        open={linkModalOpen}
-        onCancel={() => setLinkModalOpen(false)}
-        onOk={() => linkForm.submit()}
-        okText="ربط الخطين"
+        title={editing ? `تعديل الخط: ${editing.route_name}` : 'تعديل الخط'}
+        open={detailsOpen}
+        onCancel={() => setDetailsOpen(false)}
+        onOk={saveDetails}
+        okText="حفظ"
         cancelText="إلغاء"
+        width={760}
+        confirmLoading={savingStations}
       >
-        <Alert type="warning" showIcon style={{ marginBottom: 16 }}
-          message="اختر خط الذهاب وخط الإياب — بعد الربط الباص بيتبدل بينهم تلقائياً لما يوصل آخر موقف" />
-        <Form form={linkForm} onFinish={handleLink} layout="vertical">
-          <Form.Item name="route1_id" label="خط الذهاب" rules={[{ required: true, message: 'اختر خط الذهاب' }]}>
-            <Select placeholder="اختر خط الذهاب">
-              {unlinkedRoutes.map(r => (
-                <Option key={r.route_id} value={r.route_id}>
-                  {r.route_name} ({r.stations?.length || 0} موقف)
-                </Option>
-              ))}
-            </Select>
+        <Form form={detailsForm} layout="vertical" style={{ marginBottom: 12 }}>
+          <Form.Item
+            name="route_name"
+            label="اسم الخط"
+            rules={[{ required: true, message: 'أدخل اسم الخط' }]}
+          >
+            <Input />
           </Form.Item>
-          <Form.Item name="route2_id" label="خط الإياب" rules={[{ required: true, message: 'اختر خط الإياب' }]}>
-            <Select placeholder="اختر خط الإياب">
-              {unlinkedRoutes.map(r => (
-                <Option key={r.route_id} value={r.route_id}>
-                  {r.route_name} ({r.stations?.length || 0} موقف)
-                </Option>
-              ))}
-            </Select>
+          <Form.Item name="description" label="الوصف">
+            <Input.TextArea rows={2} />
           </Form.Item>
         </Form>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <Button icon={<CopyOutlined />} onClick={copyOutboundReverse}>
+            نسخ الذهاب بالعكس إلى الإياب
+          </Button>
+        </div>
+
+        <Tabs
+          activeKey={activeDirection}
+          onChange={setActiveDirection}
+          items={[
+            {
+              key: 'outbound',
+              label: 'ذهاب',
+              children: renderDirectionEditor('outbound'),
+            },
+            {
+              key: 'inbound',
+              label: 'إياب',
+              children: renderDirectionEditor('inbound'),
+            },
+          ]}
+        />
+
+        <Button
+          icon={<SaveOutlined />}
+          type="primary"
+          block
+          loading={savingStations}
+          onClick={saveDetails}
+          style={{ marginTop: 12 }}
+        >
+          حفظ ترتيب الاتجاهين
+        </Button>
       </Modal>
     </Layout>
   );

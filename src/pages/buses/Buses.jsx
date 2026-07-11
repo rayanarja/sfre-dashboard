@@ -226,7 +226,6 @@ const Buses = () => {
         </Content>
       </Layout>
 
-      {/* موديل الإضافة والتعديل */}
       <Modal
         title={editing ? 'تعديل باص' : 'إضافة باص جديد'}
         open={addModal} 
@@ -251,22 +250,9 @@ const Buses = () => {
             </Select>
           </Form.Item>
         </Form>
-        {/* {!editing && (
-          <div style={{ 
-            background: '#fffbe6', 
-            border: '1px solid #ffe58f', 
-            borderRadius: 6, 
-            padding: '8px 12px', 
-            fontSize: 12, 
-            color: '#ad6800', 
-            marginTop: 8 
-          }}>
-            ⚠️ الباص الجديد حالته "غير نشط" تلقائياً — السائق هو من سيغيرها في التطبيق
-          </div>
-        )} */}
+       
       </Modal>
 
-      {/* موديل الصيانة */}
       <Modal
         title={`🔧 صيانة الباص — ${editing?.plate_number}`}
         open={statusModal} 

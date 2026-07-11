@@ -18,9 +18,8 @@ const Login = () => {
       }
       login(res.data.user, res.data.token);
 
-      // ← إذا لازم يغيّر كلمة المرور — حوّلو لصفحة التغيير
       if (res.data.user.must_change_password) {
-        message.warning('لازم تغيّر كلمة المرور المؤقتة');
+        message.warning('يجب أن تغيّر كلمة المرور المؤقتة');
         navigate('/change-password');
       } else {
         message.success('تم تسجيل الدخول بنجاح');
@@ -44,9 +43,9 @@ const Login = () => {
           <p style={{ color: '#888' }}>تسجيل دخول المدير</p>
         </div>
         <Form form={form} onFinish={onFinish} layout="vertical">
-          <Form.Item name="email" label="الإيميل"
-            rules={[{ required: true, message: 'أدخل الإيميل' }]}>
-            <Input prefix={<UserOutlined />} placeholder="أدخل الإيميل" size="large"/>
+          <Form.Item name="email" label="البريد الإلكتروني"
+            rules={[{ required: true, message: 'أدخل البريد الإلكتروني' }]}>
+            <Input prefix={<UserOutlined />} placeholder="أدخل البريد الإلكتروني" size="large"/>
           </Form.Item>
           <Form.Item name="password" label="كلمة المرور"
             rules={[{ required: true, message: 'أدخل كلمة المرور' }]}>
