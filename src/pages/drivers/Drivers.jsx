@@ -134,7 +134,7 @@ const Drivers = () => {
           <Form.Item name="username" label="اسم السائق" rules={[{ required: true, message: 'مطلوب' }, { min: 2, message: 'على الأقل حرفين' }]}>
             <Input placeholder="مثال: ريان أحمد" />
           </Form.Item>
-          <Form.Item name="email" label="الإيميل" rules={[{ required: true, message: 'مطلوب' }, { type: 'email', message: 'إيميل غير صحيح' }]}>
+          <Form.Item name="email" label="البريد الإلكتروني" rules={[{ required: true, message: 'مطلوب' }, { type: 'email', message: 'إيميل غير صحيح' }]}>
             <Input placeholder="driver@bus.com" />
           </Form.Item>
           {!editing && (
@@ -160,11 +160,7 @@ const Drivers = () => {
           </Form.Item>
 
         </Form>
-        {/* {!editing && (
-          <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: '#ad6800' }}>
-            ⚠️ احفظ كلمة المرور وأعطها للسائق — سيستخدمها للدخول على التطبيق
-          </div>
-        )} */}
+      
       </Modal>
     </Layout>
   );

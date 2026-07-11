@@ -25,7 +25,6 @@ const fetchData = async () => {
       const res = await api.get('/pos');
       setPosList(res.data);
 
-      // حساب إجمالي الشحنات (المبالغ يلي دفعها البائعين)
       let totalRech = 0;
       for (const pos of res.data) {
         try {
@@ -100,7 +99,7 @@ const fetchData = async () => {
     { title: 'اسم المحل', dataIndex: 'name', key: 'name', render: (t) => <strong>{t}</strong> },
     { title: 'صاحب المحل', dataIndex: 'owner_name', key: 'owner_name' },
     { title: 'الهاتف', dataIndex: 'phone', key: 'phone' },
-    { title: 'الإيميل', dataIndex: 'email', key: 'email' },
+    { title: 'البريد الإلكتروني', dataIndex: 'email', key: 'email' },
     {
       title: 'الرصيد', dataIndex: 'balance', key: 'balance',
       render: (v) => <span style={{ fontWeight: 'bold', color: v > 0 ? '#52c41a' : '#ff4d4f' }}>{formatPrice(v)}</span>
@@ -187,7 +186,7 @@ const fetchData = async () => {
         </Content>
       </Layout>
 
-      {/* مودال إضافة/تعديل */}
+     
       <Modal title={editingId ? '✏️ تعديل نقطة البيع' : '➕ إضافة نقطة بيع'} open={modalOpen}
         onCancel={() => { setModalOpen(false); setEditingId(null); }} onOk={() => form.submit()} okText="حفظ" cancelText="إلغاء">
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -223,7 +222,7 @@ const fetchData = async () => {
         </Form>
       </Modal>
 
-      {/* مودال شحن رصيد */}
+   
       <Modal title={`💰 شحن رصيد — ${selectedPOS?.name || ''}`} open={rechargeModal}
         onCancel={() => setRechargeModal(false)} onOk={() => rechargeForm.submit()} okText="شحن" cancelText="إلغاء">
         <div style={{ background: '#f6ffed', padding: 12, borderRadius: 8, marginBottom: 16, border: '1px solid #b7eb8f' }}>
@@ -238,7 +237,7 @@ const fetchData = async () => {
         </Form>
       </Modal>
 
-      {/* مودال المعاملات */}
+    
       <Modal title={`📋 معاملات — ${selectedPOS?.name || ''}`} open={transModal}
         onCancel={() => setTransModal(false)} footer={null} width={700}>
         <Table dataSource={transactions} columns={transColumns} rowKey="transaction_id" size="small" pagination={{ pageSize: 10 }} />
