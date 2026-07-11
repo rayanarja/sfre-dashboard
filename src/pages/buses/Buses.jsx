@@ -157,30 +157,6 @@ const Buses = () => {
       key: 'status',
       render: s => <Tag color={statusColors[s]}>{statusLabels[s]}</Tag> 
     },
-    { 
-  title: 'آخر تحديث', 
-  dataIndex: 'last_update', 
-  key: 'last_update',
-  render: (val, record) => {
-    if (!val) return '—';
-    const date = new Date(val);
-    const time = date.toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' });
-    const day = date.toLocaleDateString('ar-SY', { day: 'numeric', month: 'numeric' });
-    const hasLocation = record.current_lat && record.current_lng;
-    return (
-      <span>
-        {day} — {time}
-        {hasLocation && (
-          <a href={`https://www.google.com/maps?q=${record.current_lat},${record.current_lng}`}
-             target="_blank" rel="noreferrer"
-             style={{ marginRight: 8, fontSize: 12 }}>
-            📍 الموقع
-          </a>
-        )}
-      </span>
-    );
-  }
-},
     {
       title: 'إجراءات', 
       key: 'actions',

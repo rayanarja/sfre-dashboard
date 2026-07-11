@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layout, Card, Row, Col, Statistic, Tag, Empty, Spin, Alert, Button, message } from 'antd';
 import {
   CarOutlined,
@@ -15,7 +15,7 @@ const { Header, Content } = Layout;
 const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 const DEFAULT_CENTER = [36.21, 37.13];
-const POLL_INTERVAL = 30000;
+const POLL_INTERVAL = 10000;
 
 let leafletPromise;
 
@@ -134,7 +134,7 @@ const BusTrackerMap = () => {
 
   const bounds = useMemo(() => getBounds(buses), [buses]);
 
-  const fetchBuses = async ({ silent = false } = {}) => {
+  const fetchBuses = useCallback(async ({ silent = false } = {}) => {
     if (silent) setRefreshing(true);
     else setLoading(true);
 
@@ -152,13 +152,13 @@ const BusTrackerMap = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBuses();
     const interval = setInterval(() => fetchBuses({ silent: true }), POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchBuses]);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,6 +245,7 @@ const BusTrackerMap = () => {
           <Button
             icon={<ReloadOutlined spin={refreshing} />}
             onClick={() => fetchBuses({ silent: true })}
+            disabled={loading || refreshing}
             loading={refreshing}
           >
             تحديث
