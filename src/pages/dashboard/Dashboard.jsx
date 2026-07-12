@@ -24,34 +24,63 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [busRes, driverRes, routeRes, stationRes, shiftRes, reportRes, issueRes, userRes, subRes] = await Promise.all([
-          api.get('/buses'), api.get('/drivers'), api.get('/routes'),
-          api.get('/stations'), api.get('/shifts'), api.get('/reports'), api.get('/issues'),
-          api.get('/users'), api.get('/subscriptions'),
+        const [
+          busRes,
+          driverRes,
+          routeRes,
+          stationRes,
+          shiftRes,
+          reportRes,
+          issueRes,
+          userRes,
+          subRes,
+        ] = await Promise.allSettled([
+          api.get('/buses'),
+          api.get('/drivers'),
+          api.get('/routes'),
+          api.get('/stations'),
+          api.get('/shifts'),
+          api.get('/reports'),
+          api.get('/issues'),
+          api.get('/users'),
+          api.get('/subscriptions'),
         ]);
-        const buses = busRes.data;
-        const users = userRes.data;
-        const subs = subRes.data;
+
+        const dataOf = (result) => (
+          result.status === 'fulfilled' && Array.isArray(result.value.data)
+            ? result.value.data
+            : []
+        );
+
+        const buses = dataOf(busRes);
+        const drivers = dataOf(driverRes);
+        const routes = dataOf(routeRes);
+        const stations = dataOf(stationRes);
+        const shifts = dataOf(shiftRes);
+        const reportsData = dataOf(reportRes);
+        const issuesData = dataOf(issueRes);
+        const users = dataOf(userRes);
+        const subs = dataOf(subRes);
         const today = dayjs().format('YYYY-MM-DD');
 
         const activeSubs = subs.filter(s => s.status === 'active' && new Date(s.end_date) >= new Date());
         const totalTripsAll = subs.reduce((sum, s) => sum + (s.trips_used || 0), 0);
 
         setStats({
-          buses: buses.length, drivers: driverRes.data.length,
-          routes: routeRes.data.length, stations: stationRes.data.length,
+          buses: buses.length, drivers: drivers.length,
+          routes: routes.length, stations: stations.length,
           active:      buses.filter(b => b.current_status === 'active').length,
           inactive:    buses.filter(b => b.current_status === 'inactive').length,
           maintenance: buses.filter(b => b.current_status === 'maintenance').length,
           breakdown:   buses.filter(b => b.current_status === 'breakdown').length,
-          todayShifts: shiftRes.data.filter(s =>
+          todayShifts: shifts.filter(s =>
             dayjs(s.date).format('YYYY-MM-DD') === today && s.status === 'active').length,
           totalPassengers: users.filter(u => u.role === 'passenger').length,
           activeSubs: activeSubs.length,
           totalTripsAll,
         });
-        setReports(reportRes.data.filter(r => dayjs(r.created_at).format('YYYY-MM-DD') === today).slice(0, 5));
-        setIssues(issueRes.data.filter(i => dayjs(i.created_at).format('YYYY-MM-DD') === today).slice(0, 5));
+        setReports(reportsData.filter(r => dayjs(r.created_at).format('YYYY-MM-DD') === today).slice(0, 5));
+        setIssues(issuesData.filter(i => dayjs(i.created_at).format('YYYY-MM-DD') === today).slice(0, 5));
       } catch (err) { console.error(err); }
     };
     fetchData();
