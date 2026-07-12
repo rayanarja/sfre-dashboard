@@ -7,6 +7,11 @@ import api from '../../api/axios';
 const { Header, Content } = Layout;
 const { Option } = Select;
 
+const directionLabels = {
+  outbound: 'ذهاب',
+  inbound: 'إياب',
+};
+
 const getRouteName = (bus, routes) => {
   if (bus.route?.route_name) return bus.route.route_name;
   const route = routes.find((item) => item.route_id === bus.route_id);
@@ -54,7 +59,11 @@ const Buses = () => {
   const openAdd = () => { setEditing(null); form.resetFields(); setAddModal(true); };
   const openEdit = (r) => {
     setEditing(r);
-    form.setFieldsValue({ plate_number: r.plate_number, route_id: r.route_id });
+    form.setFieldsValue({
+      plate_number: r.plate_number,
+      route_id: r.route_id,
+      direction: r.direction || 'outbound',
+    });
     setAddModal(true);
   };
   const openStatus = (r) => {
@@ -139,7 +148,11 @@ const Buses = () => {
         await api.put(`/buses/${editing.bus_id}`, values);
         message.success('تم تعديل الباص');
       } else {
-        await api.post('/buses', { ...values, current_status: 'inactive' });
+        await api.post('/buses', {
+          ...values,
+          direction: values.direction || 'outbound',
+          current_status: 'inactive',
+        });
         message.success('تم إضافة الباص - الحالة: غير نشط حتى يبدأ السائق');
       }
       setAddModal(false);
@@ -184,6 +197,12 @@ const Buses = () => {
       title: 'الخط',
       key: 'route',
       render: (_, r) => getRouteName(r, routes) || <Tag color="default">بدون خط</Tag>,
+    },
+    {
+      title: 'الاتجاه',
+      dataIndex: 'direction',
+      key: 'direction',
+      render: direction => <Tag color={direction === 'inbound' ? 'orange' : 'blue'}>{directionLabels[direction] || '-'}</Tag>,
     },
     {
       title: 'الحالة',
@@ -281,6 +300,12 @@ const Buses = () => {
               {routes.map(r => (
                 <Option key={r.route_id} value={r.route_id}>{r.route_name}</Option>
               ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="direction" label="الاتجاه" initialValue="outbound">
+            <Select placeholder="اختر الاتجاه">
+              <Option value="outbound">ذهاب</Option>
+              <Option value="inbound">إياب</Option>
             </Select>
           </Form.Item>
         </Form>

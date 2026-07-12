@@ -33,10 +33,13 @@ const DIRECTIONS = {
   inbound: 'إياب',
 };
 
-const stationIdOf = (station) => station.station_id ?? station.id;
+const stationIdOf = (station) => station.station_id ?? station.station?.station_id ?? station.id;
 const stationOrderOf = (station, index) => station.station_order ?? station.order_index ?? index + 1;
 
-const getStationName = (stationId, allStations) => {
+const getStationName = (routeStation, allStations) => {
+  if (routeStation.station?.name) return routeStation.station.name;
+  if (routeStation.station_name) return routeStation.station_name;
+  const stationId = routeStation.station_id;
   const station = allStations.find((item) => stationIdOf(item) === stationId);
   return station?.name || `#${stationId}`;
 };
@@ -119,14 +122,16 @@ const RoutesPage = () => {
     setDirectionStations({
       outbound: normalizeDirectionStations(route, 'outbound')
         .map((station, index) => ({
-          station_id: station.station_id ?? stationIdOf(station),
+          station_id: stationIdOf(station),
           station_order: stationOrderOf(station, index),
+          station: station.station,
         }))
         .sort((a, b) => a.station_order - b.station_order),
       inbound: normalizeDirectionStations(route, 'inbound')
         .map((station, index) => ({
-          station_id: station.station_id ?? stationIdOf(station),
+          station_id: stationIdOf(station),
           station_order: stationOrderOf(station, index),
+          station: station.station,
         }))
         .sort((a, b) => a.station_order - b.station_order),
     });
@@ -299,7 +304,7 @@ const RoutesPage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <MenuOutlined style={{ color: '#8c8c8c' }} />
                 <Tag color={direction === 'outbound' ? 'blue' : 'orange'}>{index + 1}</Tag>
-                <strong>{getStationName(station.station_id, stations)}</strong>
+                <strong>{getStationName(station, stations)}</strong>
               </div>
               <Button
                 icon={<DeleteOutlined />}
