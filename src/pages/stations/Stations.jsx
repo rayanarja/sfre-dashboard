@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Layout, Button, Modal, Form, Input, Select, message, Popconfirm, Table } from 'antd';
+import { Layout, Button, Modal, Form, Input, message, Popconfirm, Table } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import Sidebar from '../../components/Sidebar';
 import api from '../../api/axios';
@@ -9,7 +9,6 @@ const { Header, Content } = Layout;
 const Stations = () => {
   const [collapsed] = useState(false);
   const [stations, setStations] = useState([]);
-  const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -18,12 +17,8 @@ const Stations = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [stationsRes, routesRes] = await Promise.all([
-        api.get('/stations'),
-        api.get('/routes'),
-      ]);
-      setStations(Array.isArray(stationsRes.data) ? stationsRes.data : []);
-      setRoutes(Array.isArray(routesRes.data) ? routesRes.data : []);
+      const res = await api.get('/stations');
+      setStations(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       message.error(err.response?.data?.message || 'خطأ في جلب المواقف');
     } finally {
@@ -45,23 +40,17 @@ const Stations = () => {
       name: station.name,
       lat: station.lat,
       lng: station.lng,
-      route_id: station.route_id ?? station.route?.route_id,
     });
     setModalOpen(true);
   };
 
   const handleSubmit = async (values) => {
-    const payload = {
-      ...values,
-      route_id: Number(values.route_id),
-    };
-
     try {
       if (editing) {
-        await api.put(`/stations/${editing.station_id}`, payload);
+        await api.put(`/stations/${editing.station_id}`, values);
         message.success('تم تعديل الموقف');
       } else {
-        await api.post('/stations', payload);
+        await api.post('/stations', values);
         message.success('تم إضافة الموقف');
       }
       setModalOpen(false);
@@ -168,21 +157,6 @@ const Stations = () => {
           </Form.Item>
           <Form.Item name="lng" label="خط الطول (Lng)">
             <Input placeholder="مثال: 37.1343" />
-          </Form.Item>
-          <Form.Item
-            name="route_id"
-            label="الخط"
-            rules={[{ required: true, message: 'اختر الخط' }]}
-          >
-            <Select
-              placeholder="اختر الخط"
-              showSearch
-              optionFilterProp="label"
-              options={routes.map((route) => ({
-                value: route.route_id,
-                label: route.route_name,
-              }))}
-            />
           </Form.Item>
         </Form>
       </Modal>
