@@ -45,7 +45,6 @@ const Reports = () => {
       'المستخدم':  r.user?.username || '—',
       'هاتف المستخدم': r.user?.phone || '—',
       'الباص':     r.bus?.plate_number || '—',
-      'النوع':     r.type === 'complaint' ? 'شكوى' : r.type === 'suggestion' ? 'اقتراح' : 'حادثة',
       'التفاصيل':  r.description,
       'الحالة':    r.status === 'pending' ? 'جديد' : r.status === 'reviewed' ? 'مقروء' : 'محلول',
       'التاريخ':   dayjs(r.created_at).format('YYYY-MM-DD HH:mm'),
@@ -58,8 +57,6 @@ const Reports = () => {
     message.success('تم تصدير البلاغات بنجاح');
   };
 
-  const typeColors  = { complaint: 'red', suggestion: 'blue', incident: 'orange' };
-  const typeLabels  = { complaint: 'شكوى', suggestion: 'اقتراح', incident: 'حادثة' };
   const statColors  = { pending: 'red', reviewed: 'orange', resolved: 'green' };
   const statLabels  = { pending: 'جديد', reviewed: 'مقروء', resolved: 'محلول' };
 
@@ -75,8 +72,6 @@ const Reports = () => {
       )
     },
     { title: 'الباص', key: 'bus', render: (_, r) => r.bus?.plate_number || '—' },
-    { title: 'النوع', dataIndex: 'type', key: 'type',
-      render: t => <Tag color={typeColors[t]}>{typeLabels[t]}</Tag> },
     { title: 'التفاصيل', dataIndex: 'description', key: 'description', ellipsis: true },
     { title: 'الحالة', dataIndex: 'status', key: 'status',
       render: s => <Tag color={statColors[s]}>{statLabels[s]}</Tag> },
@@ -129,7 +124,7 @@ const Reports = () => {
             rowClassName={r => r.status === 'pending' ? 'ant-table-row-pending' : ''}
             summary={() => (
               <Table.Summary.Row>
-                <Table.Summary.Cell colSpan={7}>
+                <Table.Summary.Cell colSpan={6}>
                   <span style={{ color: '#888', fontSize: 12 }}>
                     إجمالي: {reports.length} —
                     <span style={{ color: '#ff4d4f' }}> جديد: {reports.filter(r => r.status === 'pending').length}</span> —
