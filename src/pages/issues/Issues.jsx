@@ -45,7 +45,6 @@ const Issues = () => {
       'الباص':          i.bus?.plate_number || '—',
       'المُبلِّغ':      i.user?.username || '—',
       'هاتف المُبلِّغ': i.user?.phone || '—',
-      'نوع العطل':      i.type,
       'التفاصيل':       i.description,
       'الحالة':         i.status === 'pending' ? 'جديد' : i.status === 'reviewed' ? 'مقروء' : 'محلول',
       'التاريخ':        dayjs(i.created_at).format('YYYY-MM-DD HH:mm'),
@@ -72,8 +71,6 @@ const Issues = () => {
         </div>
       )
     },
-    { title: 'نوع العطل', dataIndex: 'type', key: 'type',
-      render: t => <Tag color="red">{t}</Tag> },
     { title: 'التفاصيل', dataIndex: 'description', key: 'description', ellipsis: true },
     { title: 'الحالة', dataIndex: 'status', key: 'status',
       render: s => <Tag color={statColors[s]}>{statLabels[s]}</Tag> },
@@ -123,7 +120,7 @@ const Issues = () => {
             rowKey="issue_id" loading={loading} bordered size="middle"
             summary={() => (
               <Table.Summary.Row>
-                <Table.Summary.Cell colSpan={7}>
+                <Table.Summary.Cell colSpan={6}>
                   <span style={{ color: '#888', fontSize: 12 }}>
                     إجمالي: {issues.length} —
                     <span style={{ color: '#ff4d4f' }}> جديد: {issues.filter(i => i.status === 'pending').length}</span> —
