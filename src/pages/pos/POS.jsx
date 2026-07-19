@@ -41,7 +41,6 @@ const fetchData = async () => {
 
   const totalBalance = posList.reduce((sum, p) => sum + (p.balance || 0), 0);
   const [totalRecharges, setTotalRecharges] = useState(0);
-  const activeCount = posList.filter(p => p.is_active).length;
 
   const handleSubmit = async (values) => {
     try {
@@ -165,17 +164,12 @@ const fetchData = async () => {
 
         <Content style={{ margin: 24 }}>
           <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-            <Col xs={8}>
+            <Col xs={12}>
               <Card size="small" style={{ borderRadius: 10 }}>
                 <Statistic title="إجمالي نقاط البيع" value={posList.length} prefix={<ShopOutlined />} />
               </Card>
             </Col>
-            <Col xs={8}>
-              <Card size="small" style={{ borderRadius: 10 }}>
-                <Statistic title="نقاط نشطة" value={activeCount} valueStyle={{ color: '#52c41a' }} />
-              </Card>
-            </Col>
-            <Col xs={8}>
+            <Col xs={12}>
               <Card size="small" style={{ borderRadius: 10 }}>
                 <Statistic title="إجمالي الإيرادات" value={formatPrice(totalRecharges)} valueStyle={{ color: '#52c41a' }} />
               </Card>
