@@ -29,19 +29,11 @@ const Users = () => {
       const now = new Date();
       const withSubs = passengers.map(u => {
         const sub = subsRes.data.find(s =>
-          (
-            String(s.user_id) === String(u.user_id) ||
-            s.family_members?.some(member =>
-              String(member.user_id ?? member.user?.user_id) === String(u.user_id)
-            )
-          ) &&
+          s.user_id === u.user_id &&
           new Date(s.end_date) >= now &&
           new Date(s.start_date) <= now
         );
-        const isFamilyMember = sub
-          ? String(sub.user_id) !== String(u.user_id)
-          : false;
-        return { ...u, activeSub: sub || null, isFamilyMember };
+        return { ...u, activeSub: sub || null };
       });
       setUsers(withSubs);
       setFiltered(withSubs);
@@ -109,14 +101,9 @@ const Users = () => {
       title: 'الاشتراك', key: 'sub',
       render: (_, r) => {
         if (!r.activeSub) return <Tag color="red">لا يوجد اشتراك</Tag>;
-        const subscriptionLabel = r.activeSub.plan?.name
-          || typeLabel[r.activeSub.subscription_type]
-          || 'اشتراك فعال';
         return (
           <div>
-            <Tag color={r.isFamilyMember ? 'purple' : 'green'}>
-              {subscriptionLabel}{r.isFamilyMember ? ' (عضو عائلة)' : ''}
-            </Tag>
+            <Tag color="green">{typeLabel[r.activeSub.subscription_type]}</Tag>
             <span style={{ fontSize: 11, color: '#888', marginRight: 4 }}>
               ينتهي: {dayjs(r.activeSub.end_date).format('YYYY-MM-DD')}
             </span>
@@ -151,7 +138,7 @@ const Users = () => {
         <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}>
           <h2 style={{ margin: 0 }}>👥 المستخدمون</h2>
           <Input
-            placeholder="بحث باسم أو إيميل أو هاتف..."
+            placeholder="بحث باسم أو بريد إلكتروني أو هاتف..."
             prefix={<SearchOutlined />}
             style={{ width: 280 }}
             value={search}

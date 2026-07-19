@@ -77,7 +77,7 @@ const buildPopup = (bus) => `
     <div class="bus-popup-row"><span>الاتجاه</span><strong>${directionLabel(bus.direction)}</strong></div>
     <div class="bus-popup-row"><span>الموقف الحالي</span><strong>${bus.current_station_index ?? '-'}</strong></div>
     <div class="bus-popup-row"><span>الخط</span><strong>${bus.route_name || bus.route_id || '-'}</strong></div>
-    <div class="bus-popup-row"><span>آخر تحديث</span><strong>${formatDate(bus.last_update)}</strong></div>
+    <div class="bus-popup-row"><span>آخر تحديث</span><strong>${bus.last_update ?? '-'}</strong></div>
     <div class="bus-popup-row"><span>الإحداثيات</span><strong>${bus.lat}, ${bus.lng}</strong></div>
   </div>
 `;
@@ -124,6 +124,7 @@ const BusTrackerMap = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [rawMapResponse, setRawMapResponse] = useState(null);
   const [leafletReady, setLeafletReady] = useState(false);
   const [leafletError, setLeafletError] = useState(false);
 
@@ -141,6 +142,14 @@ const BusTrackerMap = () => {
     try {
       const response = await api.get('/bus-tracker/map');
       const nextBuses = Array.isArray(response.data?.buses) ? response.data.buses : [];
+      console.log('[bus-tracker/map] Raw JSON:', response.data);
+      console.table(nextBuses.map((bus) => ({
+        bus_id: bus.bus_id,
+        lat: bus.lat,
+        lng: bus.lng,
+        last_update: bus.last_update,
+      })));
+      setRawMapResponse(response.data);
       setBuses(nextBuses);
       setCount(response.data?.count ?? nextBuses.length);
       setError('');
@@ -293,6 +302,12 @@ const BusTrackerMap = () => {
             </Col>
           </Row>
 
+          <Card size="small" title="Raw JSON — /api/bus-tracker/map" style={{ marginBottom: 12 }}>
+            <pre style={{ margin: 0, maxHeight: 260, overflow: 'auto', direction: 'ltr', textAlign: 'left' }}>
+              {rawMapResponse ? JSON.stringify(rawMapResponse, null, 2) : 'لا توجد استجابة بعد'}
+            </pre>
+          </Card>
+
           <div className="bus-map-shell">
             <Card className="bus-map-card" title="المواقع على الخريطة">
               <Spin spinning={loading}>
@@ -331,7 +346,7 @@ const BusTrackerMap = () => {
                         <div><span>الخط</span>{bus.route_name || bus.route_id || '-'}</div>
                         <div><span>الاتجاه</span>{directionLabel(bus.direction)}</div>
                         <div><span>الموقف الحالي</span>{bus.current_station_index ?? '-'}</div>
-                        <div><span>آخر تحديث</span>{formatDate(bus.last_update)}</div>
+                        <div><span>آخر تحديث</span>{bus.last_update ?? '-'}</div>
                         <div><span>Latitude</span>{bus.lat ?? '-'}</div>
                         <div><span>Longitude</span>{bus.lng ?? '-'}</div>
                       </div>

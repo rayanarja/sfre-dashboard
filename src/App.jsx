@@ -21,7 +21,6 @@ import BusTrackerMap from './pages/bus-map/BusTrackerMap';
 function App() {
   const { user } = useAuth();
 
-  // إذا لازم يغيّر كلمة المرور — ما يقدر يروح لأي صفحة غير التغيير
   if (user && user.must_change_password) {
     return (
       <Routes>

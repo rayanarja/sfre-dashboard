@@ -59,7 +59,7 @@ const Subscriptions = () => {
   };
 
   const handleAddFamily = async () => {
-    if (!familyEmail) return message.warning('أدخل الإيميل');
+    if (!familyEmail) return message.warning('أدخل البريد الإلكتروني للعضو');
     try {
       await api.post(`/subscriptions/${familyModal.subscription_id}/family`, { email: familyEmail });
       message.success('تم إضافة العضو'); setFamilyEmail(''); fetchData();
@@ -76,7 +76,6 @@ const Subscriptions = () => {
     } catch { message.error('حدث خطأ'); }
   };
 
-  // ═══════════ Plans ═══════════
   const openAddPlan = () => { setEditingPlan(null); planForm.resetFields(); planForm.setFieldsValue({ max_users: 1, duration_days: 30, is_active: true }); setPlanModalOpen(true); };
   const openEditPlan = (p) => { setEditingPlan(p); planForm.setFieldsValue(p); setPlanModalOpen(true); };
 
@@ -98,7 +97,6 @@ const Subscriptions = () => {
     catch (err) { message.error(err.response?.data?.message || 'لا يمكن حذف خطة مرتبطة باشتراكات'); }
   };
 
-  // ═══════════ Helpers ═══════════
   const isActive = (sub) => sub.status === 'active' && new Date(sub.end_date) >= new Date();
   const getStatusTag = (sub) => {
     if (sub.status === 'cancelled') return <Tag color="default">ملغي</Tag>;
@@ -201,7 +199,7 @@ const Subscriptions = () => {
         </Content>
       </Layout>
 
-      {/* Modal إنشاء اشتراك */}
+  
       <Modal title="إنشاء اشتراك جديد" open={modalOpen} onCancel={() => setModalOpen(false)} onOk={() => form.submit()} okText="إنشاء" cancelText="إلغاء">
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item name="user_id" label="الراكب" rules={[{ required: true, message: 'اختر الراكب' }]}>
@@ -221,7 +219,7 @@ const Subscriptions = () => {
         </Form>
       </Modal>
 
-      {/* Modal إضافة/تعديل خطة */}
+
       <Modal title={editingPlan ? 'تعديل خطة' : 'إضافة خطة جديدة'} open={planModalOpen} onCancel={() => setPlanModalOpen(false)} onOk={() => planForm.submit()} okText="حفظ" cancelText="إلغاء" width={520}>
         <Form form={planForm} layout="vertical" onFinish={handlePlanSubmit}>
           <Form.Item name="name" label="اسم الخطة" rules={[{ required: true, message: 'أدخل اسم الخطة' }]}>
@@ -260,7 +258,7 @@ const Subscriptions = () => {
         </Form>
       </Modal>
 
-      {/* Modal العائلة */}
+     
       <Modal title={<><TeamOutlined /> إدارة أعضاء العائلة</>} open={!!familyModal} onCancel={() => { setFamilyModal(null); setFamilyEmail(''); }} footer={null} width={500}>
         {familyModal && (
           <>

@@ -19,7 +19,6 @@ const Notifications = () => {
     setLoading(true);
     try {
       const res = await api.get('/notifications');
-      // فلتر — بس إشعارات الأدمن + من الأدمن للركاب
       const filtered = res.data.filter(n => n.type === 'admin' || (n.type === 'general' && n.sender_type === 'admin'));
       setNotifs(filtered);
     } catch { message.error('خطأ في جلب البيانات'); }
@@ -28,7 +27,6 @@ const Notifications = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  // تصنيف الإشعارات
   const categorize = (n) => {
     const msg = n.message || '';
     if (msg.includes('بدأ العمل') || msg.includes('أنهى العمل')) return 'activity';
@@ -42,11 +40,13 @@ const Notifications = () => {
 
   const getFiltered = () => {
     if (activeTab === 'all') return notifs;
+    if (activeTab === 'unread') return notifs.filter(n => !n.is_read);
     return notifs.filter(n => categorize(n) === activeTab);
   };
 
   const countByCategory = (cat) => {
     if (cat === 'all') return notifs.length;
+    if (cat === 'unread') return notifs.filter(n => !n.is_read).length;
     return notifs.filter(n => categorize(n) === cat).length;
   };
 
@@ -130,6 +130,8 @@ const Notifications = () => {
 
 const tabItems = [
     { key: 'all', label: `الكل (${countByCategory('all')})` },
+    { key: 'unread', label: <span style={{ color: '#ff4d4f' }}>غير مقروء ({countByCategory('unread')})</span> },
+    { key: 'delay', label: `⏰ تأخير (${countByCategory('delay')})` },
     { key: 'extra', label: `🚌 طلب باص (${countByCategory('extra')})` },
     { key: 'admin', label: `📢 من الأدمن (${countByCategory('admin')})` },
   ];
