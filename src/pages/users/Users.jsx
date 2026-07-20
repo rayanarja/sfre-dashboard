@@ -29,11 +29,19 @@ const Users = () => {
       const now = new Date();
       const withSubs = passengers.map(u => {
         const sub = subsRes.data.find(s =>
-          s.user_id === u.user_id &&
+          (
+            String(s.user_id) === String(u.user_id) ||
+            s.family_members?.some(member =>
+              String(member.user_id ?? member.user?.user_id) === String(u.user_id)
+            )
+          ) &&
           new Date(s.end_date) >= now &&
           new Date(s.start_date) <= now
         );
-        return { ...u, activeSub: sub || null };
+        const isFamilyMember = sub
+          ? String(sub.user_id) !== String(u.user_id)
+          : false;
+        return { ...u, activeSub: sub || null, isFamilyMember };
       });
       setUsers(withSubs);
       setFiltered(withSubs);
@@ -101,9 +109,14 @@ const Users = () => {
       title: 'الاشتراك', key: 'sub',
       render: (_, r) => {
         if (!r.activeSub) return <Tag color="red">لا يوجد اشتراك</Tag>;
+        const subscriptionLabel = r.activeSub.plan?.name
+          || typeLabel[r.activeSub.subscription_type]
+          || 'اشتراك فعال';
         return (
           <div>
-            <Tag color="green">{typeLabel[r.activeSub.subscription_type]}</Tag>
+            <Tag color={r.isFamilyMember ? 'purple' : 'green'}>
+              {subscriptionLabel}{r.isFamilyMember ? ' (عضو عائلة)' : ''}
+            </Tag>
             <span style={{ fontSize: 11, color: '#888', marginRight: 4 }}>
               ينتهي: {dayjs(r.activeSub.end_date).format('YYYY-MM-DD')}
             </span>

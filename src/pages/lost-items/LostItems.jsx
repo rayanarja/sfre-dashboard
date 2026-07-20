@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Layout, Table, Tag, message, Popconfirm, Button, Badge, Image } from 'antd';
-import { DeleteOutlined, DownloadOutlined, EyeOutlined, CheckOutlined, PictureOutlined } from '@ant-design/icons';
+import { Layout, Table, Tag, message, Popconfirm, Button, Badge } from 'antd';
+import { DeleteOutlined, DownloadOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Sidebar from '../../components/Sidebar';
@@ -52,7 +52,6 @@ const LostItems = () => {
       'الوصف':          i.description,
       'الحالة':         i.status === 'lost' || i.status === 'pending' ? 'جديد'
                       : i.status === 'found' ? 'موجود' : 'مُسترجع',
-      //'صورة':           i.image_url ? 'نعم' : 'لا',
       'التاريخ':        dayjs(i.report_date).format('YYYY-MM-DD HH:mm'),
     }));
     const ws = XLSX.utils.json_to_sheet(data);
@@ -81,12 +80,6 @@ const LostItems = () => {
     i.status === 'pending' || i.status === 'lost'
   ).length;
 
-  const getImageUrl = (url) => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
-  };
-
   const columns = [
     { title: 'الباص', key: 'bus', render: (_, r) => r.bus?.plate_number || '—' },
     {
@@ -109,23 +102,6 @@ const LostItems = () => {
       )
     },
     { title: 'الوصف', dataIndex: 'description', key: 'description', ellipsis: true },
-    {
-      title: 'الصورة', key: 'image',
-      render: (_, r) => r.image_url ? (
-        <Image
-          src={getImageUrl(r.image_url)}
-          width={50}
-          height={50}
-          style={{ objectFit: 'cover', borderRadius: 8 }}
-          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN88P/BfwAJhAPkC1lbNgAAAABJRU5ErkJggg=="
-          preview={{ mask: <EyeOutlined style={{ color: '#fff' }} /> }}
-        />
-      ) : (
-        <div style={{ width: 50, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: 8 }}>
-          <PictureOutlined style={{ fontSize: 20, color: '#ccc' }} />
-        </div>
-      )
-    },
     {
       title: 'الحالة', dataIndex: 'status', key: 'status',
       render: s => (
