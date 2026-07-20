@@ -124,7 +124,6 @@ const BusTrackerMap = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [lastRefresh, setLastRefresh] = useState(null);
-  const [rawMapResponse, setRawMapResponse] = useState(null);
   const [leafletReady, setLeafletReady] = useState(false);
   const [leafletError, setLeafletError] = useState(false);
 
@@ -142,14 +141,6 @@ const BusTrackerMap = () => {
     try {
       const response = await api.get('/bus-tracker/map');
       const nextBuses = Array.isArray(response.data?.buses) ? response.data.buses : [];
-      console.log('[bus-tracker/map] Raw JSON:', response.data);
-      console.table(nextBuses.map((bus) => ({
-        bus_id: bus.bus_id,
-        lat: bus.lat,
-        lng: bus.lng,
-        last_update: bus.last_update,
-      })));
-      setRawMapResponse(response.data);
       setBuses(nextBuses);
       setCount(response.data?.count ?? nextBuses.length);
       setError('');
@@ -301,12 +292,6 @@ const BusTrackerMap = () => {
               </Card>
             </Col>
           </Row>
-
-          <Card size="small" title="Raw JSON — /api/bus-tracker/map" style={{ marginBottom: 12 }}>
-            <pre style={{ margin: 0, maxHeight: 260, overflow: 'auto', direction: 'ltr', textAlign: 'left' }}>
-              {rawMapResponse ? JSON.stringify(rawMapResponse, null, 2) : 'لا توجد استجابة بعد'}
-            </pre>
-          </Card>
 
           <div className="bus-map-shell">
             <Card className="bus-map-card" title="المواقع على الخريطة">
