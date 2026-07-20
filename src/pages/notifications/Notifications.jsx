@@ -130,8 +130,6 @@ const Notifications = () => {
 
 const tabItems = [
     { key: 'all', label: `الكل (${countByCategory('all')})` },
-    { key: 'unread', label: <span style={{ color: '#ff4d4f' }}>غير مقروء ({countByCategory('unread')})</span> },
-    { key: 'delay', label: `⏰ تأخير (${countByCategory('delay')})` },
     { key: 'extra', label: `🚌 طلب باص (${countByCategory('extra')})` },
     { key: 'admin', label: `📢 من الأدمن (${countByCategory('admin')})` },
   ];
