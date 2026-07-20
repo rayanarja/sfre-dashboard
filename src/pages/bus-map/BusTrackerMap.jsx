@@ -77,7 +77,7 @@ const buildPopup = (bus) => `
     <div class="bus-popup-row"><span>الاتجاه</span><strong>${directionLabel(bus.direction)}</strong></div>
     <div class="bus-popup-row"><span>الموقف الحالي</span><strong>${bus.current_station_index ?? '-'}</strong></div>
     <div class="bus-popup-row"><span>الخط</span><strong>${bus.route_name || bus.route_id || '-'}</strong></div>
-    <div class="bus-popup-row"><span>آخر تحديث</span><strong>${bus.last_update ?? '-'}</strong></div>
+    <div class="bus-popup-row"><span>آخر تحديث</span><strong>${formatDate(bus.last_update)}</strong></div>
     <div class="bus-popup-row"><span>الإحداثيات</span><strong>${bus.lat}, ${bus.lng}</strong></div>
   </div>
 `;
@@ -331,7 +331,7 @@ const BusTrackerMap = () => {
                         <div><span>الخط</span>{bus.route_name || bus.route_id || '-'}</div>
                         <div><span>الاتجاه</span>{directionLabel(bus.direction)}</div>
                         <div><span>الموقف الحالي</span>{bus.current_station_index ?? '-'}</div>
-                        <div><span>آخر تحديث</span>{bus.last_update ?? '-'}</div>
+                        <div><span>آخر تحديث</span>{formatDate(bus.last_update)}</div>
                         <div><span>Latitude</span>{bus.lat ?? '-'}</div>
                         <div><span>Longitude</span>{bus.lng ?? '-'}</div>
                       </div>
