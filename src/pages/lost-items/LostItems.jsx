@@ -52,7 +52,7 @@ const LostItems = () => {
       'الوصف':          i.description,
       'الحالة':         i.status === 'lost' || i.status === 'pending' ? 'جديد'
                       : i.status === 'found' ? 'موجود' : 'مُسترجع',
-      'صورة':           i.image_url ? 'نعم' : 'لا',
+      //'صورة':           i.image_url ? 'نعم' : 'لا',
       'التاريخ':        dayjs(i.report_date).format('YYYY-MM-DD HH:mm'),
     }));
     const ws = XLSX.utils.json_to_sheet(data);
